@@ -3,18 +3,18 @@ name: Frontend CI/CD Pipeline
 on:
   push:
     branches:
-      - main   # change if your branch is different
+      - main   # change if needed
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout source code
-      - name: Checkout code
+      # 1️⃣ Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2️⃣ Setup Node.js
+      # 2️⃣ Setup Node
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -28,18 +28,20 @@ jobs:
       - name: Build frontend
         run: npm run build
 
-      # 5️⃣ Clean target directory on EC2
-      - name: Clean old frontend files on EC2
+      # 5️⃣ Prepare deployment directory on EC2 (FIXED)
+      - name: Prepare frontend directory on EC2
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
           script: |
-            sudo rm -rf /var/www/frontend/*
+            sudo mkdir -p /var/www/frontend
             sudo chown -R ec2-user:ec2-user /var/www/frontend
+            sudo chmod -R 755 /var/www/frontend
+            sudo rm -rf /var/www/frontend/*
 
-      # 6️⃣ Copy build folder to EC2
+      # 6️⃣ Copy build files to EC2 (NO WILDCARDS)
       - name: Copy build files to EC2
         uses: appleboy/scp-action@v0.1.4
         with:
